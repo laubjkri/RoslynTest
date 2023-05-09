@@ -77,7 +77,7 @@ namespace RoslynTest
 
         public override string ToString()
         {            
-            return $"Parameter: {Name} [{DataType}] ({Type})";
+            return $"Parameter: ({Type}) {Name} [{DataType}]";
         }
 
     }

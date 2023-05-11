@@ -128,10 +128,107 @@ namespace RoslynTest
         }
     }
 
-    public class Expression
+    public class StructuredTextTranspiler
     {
-        public string Operator;
+        /// <summary>
+        /// Traverse the roslyn generated syntax tree recursively to generate structured text
+        /// </summary>
+        /// <param name="node"></param>
+        /// <returns></returns>
+        public string GenerateCode(SyntaxNode node)
+        {
+            // Todo include new lines and comment tokens
 
+
+
+
+            if (node is BlockSyntax blockNode)
+            {
+                // In ST we do nothing about a block node                
+                return GenerateCode(blockNode.ChildNodes().First());
+            }                        
+            else if(node is ExpressionStatementSyntax expressionStatementNode)
+            {                
+                return GetComments(expressionStatementNode) + GenerateCode(expressionStatementNode.ChildNodes().First()) + ";";
+            }
+            else if (node is AssignmentExpressionSyntax assignmentExpressionNode)
+            {
+                // Get the enumator so we can iterate across children
+                var nodesEnumerator = assignmentExpressionNode.ChildNodes().GetEnumerator();
+
+                // Get the identifier beeing assigned to
+                IdentifierNameSyntax identifierNameSyntax = (IdentifierNameSyntax)nodesEnumerator.Current;                
+                string identifier = identifierNameSyntax.Identifier.ValueText;
+                nodesEnumerator.MoveNext();
+                string expression = GenerateCode(nodesEnumerator.Current);
+                  
+
+                return $"{identifier} := {expression}"; // ST uses := for assignment
+            }
+            else if (node is BinaryExpressionSyntax binaryExpressionNode)
+            {// A binary expression contains two operands separated by one operator (operand1 + operand2)
+                string left = GenerateCode(binaryExpressionNode.Left);
+                string op = binaryExpressionNode.OperatorToken.ValueText; // We just transfer the operator directly for now. ST supports most of the same operators.
+                string right = GenerateCode(binaryExpressionNode.Right);               
+                
+                return $"{left} {op} {right}"; 
+            }
+            else if (node is IdentifierNameSyntax identifierNameNode)
+            {
+                return identifierNameNode.Identifier.ValueText;
+            }
+            else
+            {
+                throw new NotImplementedException("Node transpilation not implemented.");
+            }
+        }
+
+
+        public string GetComments(SyntaxNode node)
+        {
+            // Get comments
+            string result = string.Empty;
+            if (node.HasLeadingTrivia)
+            {
+                var comments = node.GetLeadingTrivia().Where(trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia));
+                if (comments.Count() > 0)
+                {
+                    foreach (var comment in comments)
+                    {
+                        result += comment.Span + "\n"; // Maybe the span already contains newline?
+                    }
+                }
+            }
+
+            return result;
+        }
+
+
+
+
+        public string GenerateExpression(SyntaxNode node)
+        {
+            if (node is not ExpressionSyntax) 
+                throw new ArgumentException("Expression expected");
+
+            if (node is BinaryExpressionSyntax binaryExpressionNode)
+            {// A binary expression contains two operands separated by one operator (operand1 + operand2)
+                string left = GenerateCode(binaryExpressionNode.Left);
+                string op = binaryExpressionNode.OperatorToken.ValueText; // We just transfer the operator directly for now. ST supports most of the same operators.
+                string right = GenerateCode(binaryExpressionNode.Right);
+
+                return $"{left} {op} {right}";
+            }
+            else if (node is IdentifierNameSyntax identifierNameNode)
+            {
+                return identifierNameNode.Identifier.ValueText;
+            }
+            else
+            {
+                throw new ArgumentException("Unknown expression syntax");
+            }
+
+        }
 
     }
 

@@ -65,16 +65,20 @@ namespace RoslynTest
                 Console.WriteLine(item);
             }
 
-            // Find the block that contains the body of the function
-            // There can be only one block for a function definition
-            BlockSyntax block = functionSyntaxNode.ChildNodes().OfType<BlockSyntax>().Single();
-            
 
-            // Get all children of the block
-            foreach (SyntaxNode item in block.ChildNodes())
-            {
-                Console.WriteLine(item.);
-            }
+
+            // Transpile the block
+            BlockSyntax block = functionSyntaxNode.ChildNodes().OfType<BlockSyntax>().Single();
+
+            string st = StructuredTextTranspiler.GenerateCode(block);
+
+            Console.Write(st);
+
+
+
+
+
+
         }
     }
 
@@ -135,7 +139,7 @@ namespace RoslynTest
         /// </summary>
         /// <param name="node"></param>
         /// <returns></returns>
-        public string GenerateCode(SyntaxNode node)
+        static public string GenerateCode(SyntaxNode node)
         {
             // Todo include new lines and comment tokens
 
@@ -149,7 +153,7 @@ namespace RoslynTest
             }                        
             else if(node is ExpressionStatementSyntax expressionStatementNode)
             {                
-                return GetComments(expressionStatementNode) + GenerateCode(expressionStatementNode.ChildNodes().First()) + ";";
+                return GetComments(expressionStatementNode) + GenerateCode(expressionStatementNode.ChildNodes().First()) + ";\n";
             }
             else if (node is AssignmentExpressionSyntax assignmentExpressionNode)
             {
@@ -157,6 +161,7 @@ namespace RoslynTest
                 var nodesEnumerator = assignmentExpressionNode.ChildNodes().GetEnumerator();
 
                 // Get the identifier beeing assigned to
+                nodesEnumerator.MoveNext();
                 IdentifierNameSyntax identifierNameSyntax = (IdentifierNameSyntax)nodesEnumerator.Current;                
                 string identifier = identifierNameSyntax.Identifier.ValueText;
                 nodesEnumerator.MoveNext();
@@ -184,7 +189,7 @@ namespace RoslynTest
         }
 
 
-        public string GetComments(SyntaxNode node)
+        static public string GetComments(SyntaxNode node)
         {
             // Get comments
             string result = string.Empty;
@@ -195,7 +200,7 @@ namespace RoslynTest
                 {
                     foreach (var comment in comments)
                     {
-                        result += comment.Span + "\n"; // Maybe the span already contains newline?
+                        result += comment + "\n"; // Maybe the span already contains newline?
                     }
                 }
             }
